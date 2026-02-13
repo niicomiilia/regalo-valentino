@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Per Maddalena ❤️</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Georgia', serif;
+    background: linear-gradient(135deg, #f8cdda, #fbd3e9);
+    color: #5a3e4b;
+    text-align: center;
+    overflow-x: hidden;
+    position: relative;
+}
+
+section {
+    padding: 60px 20px;
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 1s ease;
+}
+
+section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+h1 { font-size: 3em; }
+h2 { font-size: 2em; margin-bottom: 20px; }
+.subtitle { opacity: 0.8; }
+
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+.gallery img {
+    width: 280px; height: 350px;
+    object-fit: cover;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+}
+.gallery img:hover { transform: scale(1.05); }
+
+.letter {
+    max-width: 700px;
+    margin: auto;
+    background: rgba(255,255,255,0.5);
+    padding: 40px;
+    border-radius: 20px;
+    line-height: 1.8;
+    font-size: 1.1em;
+    white-space: pre-wrap;
+}
+
+button {
+    background: white;
+    color: #c06c84;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 30px;
+}
+
+.hidden { display: none; }
+
+#map { height: 400px; width: 80%; margin: auto; border-radius: 20px; }
+</style>
+</head>
+
+<body>
+
+<!-- Playlist -->
+<section>
+    <h2>La nostra canzone 🎵</h2>
+    <iframe
+        src="https://open.spotify.com/embed/playlist/2FRlq15G4qLvFZX588TQGx"
+        width="300"
+        height="80"
+        frameborder="0"
+        allowtransparency="true"
+        allow="encrypted-media">
+    </iframe>
+</section>
+
+<section>
+    <h1>Maddalena ❤️</h1>
+    <p class="subtitle">Anche a migliaia di chilometri, siamo legati dallo stesso filo rosso.</p>
+</section>
+
+<section>
+    <h2>Il nostro filo rosso 🌍</h2>
+    <div id="map"></div>
+</section>
+
+<section>
+    <h2>I Nostri Momenti ✨</h2>
+    <div class="gallery">
+        <img src="PHOTO-2026-01-22-12-47-22.jpg" alt="Noi 1">
+        <img src="100_0066.JPG" alt="Noi 2">
+        <img src="IMG_1065.jpg" alt="Noi 3">
+        <img src="IMG_0443.jpg" alt="Noi 1">
+        <img src="IMG_1566.jpg" alt="Noi 2">
+        <img src="IMG_0282.jpg" alt="Noi 3">
+    </div>
+</section>
+
+<section>
+    <button onclick="typeLetter()">Apri la mia lettera 💌</button>
+    <div id="letter" class="letter hidden"></div>
+</section>
+
+<section>
+    <h2>Ci rivedremo tra… ⏳</h2>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:20px;">
+        <img src="Captura 2026-02-13 a las 1.42.15.jpg" alt="Noi" style="width:300px; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div id="countdown" style="font-size:2em; font-weight:bold; color:#5a3e4b;"></div>
+    </div>
+</section>
+
+<canvas id="heartsCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9999;"></canvas>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+// 🌍 Mappa con tappa a Cagliari
+const mapSection = document.getElementById('map');
+const bilbao = [43.2630, -2.9350];
+const cagliari = [39.2238, 9.1217];
+const athens = [37.9838, 23.7275];
+
+const map = L.map('map').setView([41,10],4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+L.marker(bilbao).addTo(map).bindPopup("Tu ❤️ - Bilbao");
+L.marker(cagliari).addTo(map).bindPopup("Tappa ❤️ - Cagliari");
+L.marker(athens).addTo(map).bindPopup("Lei ❤️ - Atene");
+
+const observerMap = new IntersectionObserver((entries) => {
+    if(entries[0].isIntersecting){
+        drawLineWithHeart();
+        observerMap.disconnect();
+    }
+}, {threshold: 0.5});
+
+observerMap.observe(mapSection);
+
+function drawLineWithHeart() {
+    const steps1 = 100; // Bilbao → Cagliari
+    const latStep1 = (cagliari[0]-bilbao[0])/steps1;
+    const lngStep1 = (cagliari[1]-bilbao[1])/steps1;
+    const steps2 = 100; // Cagliari → Atene
+    const latStep2 = (athens[0]-cagliari[0])/steps2;
+    const lngStep2 = (athens[1]-cagliari[1])/steps2;
+
+    const lineCoords = [bilbao];
+    const polyline = L.polyline([], {color:'red', weight:4, opacity:0.8}).addTo(map);
+    let stepIndex = 0;
+
+    // prima parte
+    const interval1 = setInterval(()=>{
+        if(stepIndex > steps1){
+            clearInterval(interval1);
+            drawHeartAtCagliari();
+            stepIndex = 0;
+            // seconda parte
+            const interval2 = setInterval(()=>{
+                if(stepIndex>steps2){ clearInterval(interval2); return; }
+                const nextPoint = [cagliari[0]+latStep2*stepIndex, cagliari[1]+lngStep2*stepIndex];
+                lineCoords.push(nextPoint);
+                polyline.setLatLngs(lineCoords);
+                stepIndex++;
+            }, 80);
+            return;
+        }
+        const nextPoint = [bilbao[0]+latStep1*stepIndex, bilbao[1]+lngStep1*stepIndex];
+        lineCoords.push(nextPoint);
+        polyline.setLatLngs(lineCoords);
+        stepIndex++;
+    }, 80);
+
+    function drawHeartAtCagliari() {
+        const heartIcon = L.divIcon({
+            html: '❤️',
+            className: '',
+            iconSize: [30, 30]
+        });
+        L.marker(cagliari, {icon: heartIcon}).addTo(map);
+    }
+}
+
+map.fitBounds(L.polyline([bilbao, cagliari, athens]).getBounds());
+
+// 💌 Lettera
+const fullLetter = `Maddalena,
+
+tra Bilbao e Atene ci sono chilometri,
+ma tra noi solo un filo rosso invisibile che continua a tenerci uniti.
+
+Non importa dove siamo,
+importa dove stiamo andando.
+E io voglio andarci con te.
+
+A marzo canteremo insieme al concerto di Franco126,
+ma ogni giorno ti porto con me.
+
+❤️`;
+
+function typeLetter() {
+    const el = document.getElementById("letter");
+    el.classList.remove("hidden");
+    el.innerHTML = "";
+    let i=0;
+    const interval = setInterval(()=>{
+        if(i<fullLetter.length){ el.innerHTML += fullLetter[i]; i++; } else { clearInterval(interval); }
+    },30);
+}
+
+// ⏳ Countdown
+const reunionDate = new Date("March 15, 2026 00:00:00").getTime();
+setInterval(()=>{
+    const now = new Date().getTime();
+    const dist = reunionDate - now;
+    const days = Math.floor(dist/(1000*60*60*24));
+    const hours = Math.floor((dist % (1000*60*60*24))/(1000*60*60));
+    const mins = Math.floor((dist % (1000*60*60))/(1000*60));
+    const secs = Math.floor((dist % (1000*60))/1000);
+    document.getElementById("countdown").innerHTML = `${days} giorni ${hours} ore ${mins} min ${secs} sec`;
+    if(dist<0) document.getElementById("countdown").innerHTML = "Finalmente insieme! ❤️";
+},1000);
+
+// ❤️ Cuori cadenti
+const canvas = document.getElementById("heartsCanvas");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext("2d");
+const hearts = [];
+const colors = ["#ff4b5c","#ff6f91","#ff92a9"];
+function createHeartCanvas(){
+    const size = 10 + Math.random()*20;
+    hearts.push({x: Math.random()*canvas.width, y:-size, size:size, speed:1+Math.random()*2, color:colors[Math.floor(Math.random()*colors.length)], angle:Math.random()*360});
+}
+function drawHearts(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let h of hearts){
+        ctx.save();
+        ctx.translate(h.x,h.y);
+        ctx.rotate(h.angle*Math.PI/180);
+        ctx.fillStyle=h.color;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.bezierCurveTo(0,-h.size/2,-h.size/2,-h.size/2,-h.size/2,0);
+        ctx.bezierCurveTo(-h.size/2,h.size/2,0,h.size,0,h.size*1.2);
+        ctx.bezierCurveTo(0,h.size,h.size/2,h.size/2,h.size/2,0);
+        ctx.bezierCurveTo(h.size/2,-h.size/2,0,-h.size/2,0,0);
+        ctx.fill();
+        ctx.restore();
+        h.y+=h.speed; h.angle+=1;
+    }
+    for(let i=hearts.length-1;i>=0;i--){ if(hearts[i].y>canvas.height+50) hearts.splice(i,1); }
+    requestAnimationFrame(drawHearts);
+}
+setInterval(createHeartCanvas,300);
+drawHearts();
+window.addEventListener("resize",()=>{canvas.width=window.innerWidth; canvas.height=window.innerHeight;});
+
+// ✨ Fade-in sezioni
+const sections = document.querySelectorAll("section");
+const observerFade = new IntersectionObserver((entries)=>{
+    entries.forEach(entry => {
+        if(entry.isIntersecting){
+            entry.target.classList.add("visible");
+        }
+    });
+}, {threshold:0.3});
+
+sections.forEach(sec => observerFade.observe(sec));
+</script>
+
+</body>
+</html>
