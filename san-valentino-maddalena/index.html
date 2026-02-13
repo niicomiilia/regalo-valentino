@@ -54,18 +54,18 @@ button {
 const yes = document.getElementById("yes");
 const no = document.getElementById("no");
 
-// centro iniziale
+// posizione iniziale
 yes.style.left = "40%";
 yes.style.top = "60%";
 no.style.left = "60%";
 no.style.top = "60%";
 
-// clic su Sì → vai al sito principale
+// clic su Sì → apri la pagina principale
 yes.addEventListener("click", () => {
-    window.location.href = "index.html"; // metti qui il nome della pagina principale
+    window.location.href = "valentine.html"; // ora punta alla pagina principale
 });
 
-// Funzione per spostare No e crescere Sì
+// sposta No e ingrandisci Sì quando il cursore si avvicina
 document.body.addEventListener("mousemove", (e)=>{
     const noRect = no.getBoundingClientRect();
     const distance = Math.hypot(e.clientX - (noRect.left+noRect.width/2), e.clientY - (noRect.top+noRect.height/2));
